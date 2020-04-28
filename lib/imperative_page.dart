@@ -11,7 +11,7 @@ class ImperativePage extends StatefulWidget {
 class _ImperativePageState extends State<ImperativePage> {
   final _apiUrl = 'https://api.github.com/repositories?since=364';
   final _reposList = [];
-  final _loading = false;
+  bool _loading;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +23,9 @@ class _ImperativePageState extends State<ImperativePage> {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.get_app),
         onPressed: () {
+          setState(() {
+            _loading = true;
+          });
           _fetchGithubRepos();
         },
       ),
@@ -30,11 +33,26 @@ class _ImperativePageState extends State<ImperativePage> {
   }
 
   Widget _buildBody() {
-    if (_loading) {
+    if (_loading == null) {
+      return _buildPlaceholder();
+    } else if (_loading) {
       return _buildLoading();
     } else {
       return _buildReposList();
     }
+  }
+
+  Widget _buildPlaceholder() {
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text('Click button '),
+          Icon(Icons.get_app),
+          Text(' to start')
+        ],
+      ),
+    );
   }
 
   Widget _buildLoading() {
@@ -49,9 +67,14 @@ class _ImperativePageState extends State<ImperativePage> {
         final name = _reposList[index]['full_name'] as String;
         final description = _reposList[index]['description'] as String;
         final owner = _reposList[index]['owner'] as Map;
-        final avatarUrl = owner != null ? (owner['avatar_url'] as String) : null;
+        final avatarUrl =
+            owner != null ? (owner['avatar_url'] as String) : null;
         return ListTile(
-          leading: Image.network(avatarUrl, width: 32.0, height: 32.0,),
+          leading: Image.network(
+            avatarUrl,
+            width: 32.0,
+            height: 32.0,
+          ),
           title: Text(name ?? "..."),
           subtitle: Text(description ?? "..."),
         );
@@ -67,12 +90,16 @@ class _ImperativePageState extends State<ImperativePage> {
         final data = json.decode(body) as List;
         _reposList.clear();
         _reposList.addAll(data);
-        setState(() {});
+        setState(() {
+          _loading = false;
+        });
       } else {
-        showDialog(context: context, builder: (_) => AlertDialog(
-          title: Text('Error'),
-          content: Text('Oppp!! Something went wrong.'),
-        ));
+        showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+                  title: Text('Error'),
+                  content: Text('Oppp!! Something went wrong.'),
+                ));
       }
     });
   }
